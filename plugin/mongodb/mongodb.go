@@ -42,7 +42,7 @@ type MongoDoc struct {
 	To   ToDoc     `bson:"to"`
 }
 
-type mongoDBPlugin struct {
+type plugin struct {
 	URI        string
 	Database   string
 	Collection string
@@ -52,13 +52,13 @@ type mongoDBPlugin struct {
 	cache      *cache.Cache
 }
 
-func newMongoDBPlugin() *mongoDBPlugin {
-	return &mongoDBPlugin{
+func newMongoDBPlugin() *plugin {
+	return &plugin{
 		cache: cache.New(1*time.Minute, 10*time.Minute),
 	}
 }
 
-func (p *mongoDBPlugin) connect() error {
+func (p *plugin) connect() error {
 	if p.client != nil {
 		if err := p.client.Ping(context.TODO(), nil); err == nil {
 			return nil
@@ -77,7 +77,7 @@ func (p *mongoDBPlugin) connect() error {
 	return nil
 }
 
-func (p *mongoDBPlugin) supportedMethods() ([]string, error) {
+func (p *plugin) supportedMethods() ([]string, error) {
 	if err := p.connect(); err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (p *mongoDBPlugin) supportedMethods() ([]string, error) {
 	return methods, nil
 }
 
-func (p *mongoDBPlugin) verifyHostKey(conn libplugin.ConnMetadata, hostname, netaddr string, key []byte) error {
+func (p *plugin) verifyHostKey(conn libplugin.ConnMetadata, hostname, netaddr string, key []byte) error {
 	if err := p.connect(); err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (p *mongoDBPlugin) verifyHostKey(conn libplugin.ConnMetadata, hostname, net
 	return libplugin.VerifyHostKeyFromKnownHosts(bytes.NewBuffer(knownHosts), hostname, netaddr, key)
 }
 
-func (p *mongoDBPlugin) createUpstream(conn libplugin.ConnMetadata, toDoc ToDoc, originPassword string) (*libplugin.Upstream, error) {
+func (p *plugin) createUpstream(conn libplugin.ConnMetadata, toDoc ToDoc, originPassword string) (*libplugin.Upstream, error) {
 
 	host, port, err := libplugin.SplitHostPortForSSH(toDoc.Host)
 	if err != nil {
@@ -175,7 +175,7 @@ func (p *mongoDBPlugin) createUpstream(conn libplugin.ConnMetadata, toDoc ToDoc,
 	return nil, fmt.Errorf("no password or private key found")
 }
 
-func (p *mongoDBPlugin) findAndCreateUpstream(conn libplugin.ConnMetadata, password string, publicKey []byte) (*libplugin.Upstream, error) {
+func (p *plugin) findAndCreateUpstream(conn libplugin.ConnMetadata, password string, publicKey []byte) (*libplugin.Upstream, error) {
 	if err := p.connect(); err != nil {
 		return nil, err
 	}
